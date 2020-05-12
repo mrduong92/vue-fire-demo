@@ -4,7 +4,6 @@
   </div>
 </template>
 <script>
-import { db } from '../db'
 
 const users = db.collection('users')
 

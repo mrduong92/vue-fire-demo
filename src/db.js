@@ -8,9 +8,9 @@ Vue.use(firestorePlugin)
 // Get a Firestore instance
 export const db = firebase
   .initializeApp({
-    apiKey: 'AIzaSyDfn-UCPHXb8A7nwktMcqInmCa6j4SLsLE',
-    authDomain: 'https://pay-create.firebaseio.com',
-    projectId: 'pay-create'
+    apiKey: 'AIzaSyBCj_Qlesuyx-tEo4TzHVRi4hnC5sMIymM',
+    authDomain: 'https://vuefire-65c2e.firebaseio.com',
+    projectId: 'vuefire-65c2e'
   })
   .firestore()
 

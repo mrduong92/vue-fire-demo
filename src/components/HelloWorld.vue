@@ -1,126 +1,90 @@
 <template>
   <div class="hello">
-    <h1>{{ msg }}</h1>
-    <h2>Essential44 666Links222</h2>
-    <ul>
-      <li>
-        <a
-          href="https://vuejs.org"
-          target="_blank"
-        >
-          Core Docs
-        </a>
-      </li>
-      <li>
-        <a
-          href="https://forum.vuejs.org"
-          target="_blank"
-        >
-          Forum
-        </a>
-      </li>
-      <li>
-        <a
-          href="https://chat.vuejs.org"
-          target="_blank"
-        >
-          Community Chat
-        </a>
-      </li>
-      <li>
-        <a
-          href="https://twitter.com/vuejs"
-          target="_blank"
-        >
-          Twitter
-        </a>
-      </li>
-      <br>
-      <li>
-        <a
-          href="http://vuejs-templates.github.io/webpack/"
-          target="_blank"
-        >
-          Docs for This Template
-        </a>
-      </li>
-    </ul>
-    <h2>Ecosystem</h2>
-    <ul>
-      <li>
-        <a
-          href="http://router.vuejs.org/"
-          target="_blank"
-        >
-          vue-router
-        </a>
-      </li>
-      <li>
-        <a
-          href="http://vuex.vuejs.org/"
-          target="_blank"
-        >
-          vuex
-        </a>
-      </li>
-      <li>
-        <a
-          href="http://vue-loader.vuejs.org/"
-          target="_blank"
-        >
-          vue-loader
-        </a>
-      </li>
-      <li>
-        <a
-          href="https://github.com/vuejs/awesome-vue"
-          target="_blank"
-        >
-          awesome-vue
-        </a>
-      </li>
-    </ul>
+    <h1>{{ msg1 }}</h1>
+    <h2>{{ msg2 }}</h2>
+    <div class="input-group">
+        <input id="btn-input" type="text" class="form-control input-sm chat_input" placeholder="Enter your nickname..." v-model="username">
+        <span class="input-group-btn">
+        <button class="btn btn-primary btn-sm" @click="sendNickName()">Send</button>
+        </span>
+    </div>
+    <div v-if="user">
+      <h2 v-text="msg3 + user.name"></h2>
+      <ul>
+        <li v-for="room in rooms" :key="room.id">
+          <router-link :to="`/rooms/${room.id}`" class="nav-link">{{ room.name }}</router-link>
+        </li>
+      </ul>
+    </div>
   </div>
 </template>
 
 <script>
 import { db } from '../db'
-
-// const jobs = db.collection('jobs').doc('a').get()
+import firebase from 'firebase/app'
 
 export default {
   name: 'HelloWorld',
-  props: ['id'],
   data () {
     return {
-      msg: 'Welcome to Your Vue.js App',
-      jobs: []
+      msg1: 'Welcome to Chat XXX Room',
+      msg2: 'Login your username',
+      msg3: 'Room List of ',
+      rooms: [],
+      messages: [],
+      username: null,
+      user: null
     }
-  },
-  mounted () {
-  //   db.collection('jobs')
-  //     .get()
-  //     .then(querySnapshot => {
-  //       // console.log(querySnapshot.docs)
-  //       this.jobs = querySnapshot.docs.map(doc => {
-  //         console.log(doc.data())
-  //       })
-  //       // do something with documents
-  //     })
-
-    console.log('this.jobs')
-    console.log(this.jobs)
-  },
-  firestore: {
-    jobs: db.collection('jobs')
   },
   watch: {
-    jobs: {
+    user: {
       immediate: true,
-      handler (id) {
-        console.log(id[0].aaa.seconds)
+      handler (val) {
+        localStorage.setItem('user', JSON.stringify(val))
       }
     }
+  },
+  // firestore: {
+  //   rooms: [
+  //     db.collection('users').doc('rooms')
+  //   ]
+  // },
+  methods: {
+    sendNickName () {
+      db.collection('users')
+        .where('username', '==', this.username)
+        .limit(1)
+        .get()
+        .then(snapshot => {
+          snapshot.forEach((doc) => {
+            if (doc.exists) {
+              this.user = doc.data()
+              this.user.id = doc.id
+              const roomIds = JSON.parse(JSON.stringify(this.user.rooms))
+              this.getRooms(roomIds)
+            }
+          })
+        })
+    },
+    getRooms (roomIds) {
+      db.collection('rooms').where(firebase.firestore.FieldPath.documentId(), 'in', roomIds).get().then(snapshot => {
+        snapshot.forEach(doc => {
+          const room = doc.data()
+          room.id = doc.id
+          this.rooms.push(room)
+        })
+      })
+    }
+    // getMessages (roomId) {
+    //   db.collection('rooms').doc(roomId).collection('messages').get().then(snapshot => {
+    //     snapshot.forEach(doc => {
+    //       // Get Sender
+    //       doc.data().from.get().then(docMes => {
+    //         console.log(docMes.data())
+    //       })
+    //     })
+    //   })
+    // }
   }
 }
 </script>
@@ -140,5 +104,8 @@ li {
 }
 a {
   color: #42b983;
+}
+ul {
+  display: inline-grid;
 }
 </style>

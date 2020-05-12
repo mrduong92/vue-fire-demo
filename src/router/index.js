@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import HelloWorld from '@/components/HelloWorld'
-import UserProfile from '@/components/UserProfile'
+import Room from '@/components/Room'
 import { firestorePlugin } from 'vuefire'
 
 Vue.use(Router)
@@ -15,9 +15,9 @@ export default new Router({
       component: HelloWorld
     },
     {
-      path: '/user-profile',
-      name: 'user-profile',
-      component: UserProfile
+      path: '/rooms/:room',
+      name: 'room',
+      component: Room
     }
   ]
 })
