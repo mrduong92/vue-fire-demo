@@ -1,6 +1,7 @@
 <template>
-  <div class="hello">
-    <h1 v-if="room">Room {{ room.name }}</h1>
+  <div class="hello" v-if="user">
+    <router-link :to="`/`" class="nav-link">Back to homepage</router-link>
+    <h1 v-if="room">{{ room.name }}</h1>
     <center>
       <div class="row chat-window col-xs-5 col-md-3" id="chat_window_1" style="margin-left:10px;">
           <div class="col-xs-12 col-md-12">
@@ -15,72 +16,11 @@
                       </div>
                   </div>
                   <div class="panel-body msg_container_base">
-                      <div class="row msg_container base_sent">
+                      <div class="row msg_container base_sent" v-for="message in messages" :key="message.id">
                           <div class="col-md-10 col-xs-10">
                               <div class="messages msg_sent">
-                                  <p>that mongodb thing looks good, huh?
-                                  tiny master db, and huge document store</p>
-                                  <time datetime="2009-11-13T20:00">Timothy • 51 min</time>
-                              </div>
-                          </div>
-                          <div class="col-md-2 col-xs-2 avatar">
-                              <img src="http://www.bitrebels.com/wp-content/uploads/2011/02/Original-Facebook-Geek-Profile-Avatar-1.jpg" class=" img-responsive ">
-                          </div>
-                      </div>
-                      <div class="row msg_container base_receive">
-                          <div class="col-md-2 col-xs-2 avatar">
-                              <img src="http://www.bitrebels.com/wp-content/uploads/2011/02/Original-Facebook-Geek-Profile-Avatar-1.jpg" class=" img-responsive ">
-                          </div>
-                          <div class="col-md-10 col-xs-10">
-                              <div class="messages msg_receive">
-                                  <p>that mongodb thing looks good, huh?
-                                  tiny master db, and huge document store</p>
-                                  <time datetime="2009-11-13T20:00">Timothy • 51 min</time>
-                              </div>
-                          </div>
-                      </div>
-                      <div class="row msg_container base_receive">
-                          <div class="col-md-2 col-xs-2 avatar">
-                              <img src="http://www.bitrebels.com/wp-content/uploads/2011/02/Original-Facebook-Geek-Profile-Avatar-1.jpg" class=" img-responsive ">
-                          </div>
-                          <div class="col-xs-10 col-md-10">
-                              <div class="messages msg_receive">
-                                  <p>that mongodb thing looks good, huh?
-                                  tiny master db, and huge document store</p>
-                                  <time datetime="2009-11-13T20:00">Timothy • 51 min</time>
-                              </div>
-                          </div>
-                      </div>
-                      <div class="row msg_container base_sent">
-                          <div class="col-xs-10 col-md-10">
-                              <div class="messages msg_sent">
-                                  <p>that mongodb thing looks good, huh?
-                                  tiny master db, and huge document store</p>
-                                  <time datetime="2009-11-13T20:00">Timothy • 51 min</time>
-                              </div>
-                          </div>
-                          <div class="col-md-2 col-xs-2 avatar">
-                              <img src="http://www.bitrebels.com/wp-content/uploads/2011/02/Original-Facebook-Geek-Profile-Avatar-1.jpg" class=" img-responsive ">
-                          </div>
-                      </div>
-                      <div class="row msg_container base_receive">
-                          <div class="col-md-2 col-xs-2 avatar">
-                              <img src="http://www.bitrebels.com/wp-content/uploads/2011/02/Original-Facebook-Geek-Profile-Avatar-1.jpg" class=" img-responsive ">
-                          </div>
-                          <div class="col-xs-10 col-md-10">
-                              <div class="messages msg_receive">
-                                  <p>that mongodb thing looks good, huh?
-                                  tiny master db, and huge document store</p>
-                                  <time datetime="2009-11-13T20:00">Timothy • 51 min</time>
-                              </div>
-                          </div>
-                      </div>
-                      <div class="row msg_container base_sent">
-                          <div class="col-md-10 col-xs-10 ">
-                              <div class="messages msg_sent">
-                                  <p>that mongodb thing looks good, huh?
-                                  tiny master db, and huge document store</p>
-                                  <time datetime="2009-11-13T20:00">Timothy • 51 min</time>
+                                  <p v-text="message.content"></p>
+                                  <time datetime="2009-11-13T20:00">{{ message.sender.name }} • 51 min</time>
                               </div>
                           </div>
                           <div class="col-md-2 col-xs-2 avatar">
@@ -104,25 +44,57 @@
 </template>
 <script>
 import { db } from '../db'
+import lodash from 'lodash'
+import { authUser } from '../user'
 
 export default {
   name: 'Room',
   data () {
     return {
       room: null,
-      user: null
+      user: null,
+      messages: []
     }
   },
-  created () {
+  mounted () {
+    console.log(2325544452)
     const roomId = this.$route.params.room
-    if (localStorage.user) {
-      this.user = JSON.parse(localStorage.getItem('user'))
+    if (authUser) {
+      this.user = authUser
     }
 
     db.collection('rooms').doc(roomId).get().then(snapshot => {
       this.room = snapshot.data()
       this.room.id = snapshot.id
     })
+  },
+  watch: {
+    room: {
+      immediate: true,
+      handler (val) {
+        if (lodash.has(this.room, 'id')) {
+          this.getMessages(this.room.id)
+        }
+      }
+    }
+  },
+  methods: {
+    getMessages (roomId) {
+      console.log(roomId)
+      db.collection('rooms').doc(roomId).collection('messages').get().then(snapshot => {
+        snapshot.forEach(doc => {
+          const message = doc.data()
+          message.id = doc.id
+          // Get Sender
+          doc.data().from.get().then(docMes => {
+            message.sender = docMes.data()
+            message.sender.id = docMes.id
+          })
+
+          this.messages.push(message)
+        })
+      })
+    }
   }
 }
 </script>

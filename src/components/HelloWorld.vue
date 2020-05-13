@@ -1,13 +1,6 @@
 <template>
   <div class="hello">
     <h1>{{ msg1 }}</h1>
-    <h2>{{ msg2 }}</h2>
-    <div class="input-group">
-        <input id="btn-input" type="text" class="form-control input-sm chat_input" placeholder="Enter your nickname..." v-model="username">
-        <span class="input-group-btn">
-        <button class="btn btn-primary btn-sm" @click="sendNickName()">Send</button>
-        </span>
-    </div>
     <div v-if="user">
       <h2 v-text="msg3 + user.name"></h2>
       <ul>
@@ -16,11 +9,22 @@
         </li>
       </ul>
     </div>
+    <div v-else>
+      <h2>{{ msg2 }}</h2>
+      <div class="input-group">
+          <input id="btn-input" type="text" class="form-control input-sm chat_input" placeholder="Enter your nickname..." v-model="username">
+          <span class="input-group-btn">
+          <button class="btn btn-primary btn-sm" @click="sendNickName()">Send</button>
+          </span>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 import { db } from '../db'
+import { authUser } from '../user'
+import lodash from 'lodash'
 import firebase from 'firebase/app'
 
 export default {
@@ -41,14 +45,20 @@ export default {
       immediate: true,
       handler (val) {
         localStorage.setItem('user', JSON.stringify(val))
+
+        if (lodash.has(this.user, 'rooms')) {
+          const roomIds = JSON.parse(JSON.stringify(this.user.rooms))
+          this.getRooms(roomIds)
+        }
       }
     }
   },
-  // firestore: {
-  //   rooms: [
-  //     db.collection('users').doc('rooms')
-  //   ]
-  // },
+  mounted () {
+    if (authUser) {
+      this.user = authUser
+    }
+    console.log(3434444443)
+  },
   methods: {
     sendNickName () {
       db.collection('users')
@@ -60,8 +70,6 @@ export default {
             if (doc.exists) {
               this.user = doc.data()
               this.user.id = doc.id
-              const roomIds = JSON.parse(JSON.stringify(this.user.rooms))
-              this.getRooms(roomIds)
             }
           })
         })
@@ -75,16 +83,6 @@ export default {
         })
       })
     }
-    // getMessages (roomId) {
-    //   db.collection('rooms').doc(roomId).collection('messages').get().then(snapshot => {
-    //     snapshot.forEach(doc => {
-    //       // Get Sender
-    //       doc.data().from.get().then(docMes => {
-    //         console.log(docMes.data())
-    //       })
-    //     })
-    //   })
-    // }
   }
 }
 </script>
