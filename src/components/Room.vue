@@ -16,23 +16,36 @@
                       </div>
                   </div>
                   <div class="panel-body msg_container_base">
-                      <div class="row msg_container base_sent" v-for="message in messages" :key="message.id">
+                      <div class="row msg_container" :class="[isMe(message.from) ? 'base_sent' : 'base_receive']" v-for="message in messages" :key="message.id">
+                        <template v-if="isMe(message.from)">
                           <div class="col-md-10 col-xs-10">
                               <div class="messages msg_sent">
                                   <p v-text="message.content"></p>
-                                  <time datetime="2009-11-13T20:00">{{ message.sender.name }} • 51 min</time>
+                                  <time datetime="2009-11-13T20:00" v-text="getSenderName(message) || ''"></time>
                               </div>
                           </div>
                           <div class="col-md-2 col-xs-2 avatar">
                               <img src="http://www.bitrebels.com/wp-content/uploads/2011/02/Original-Facebook-Geek-Profile-Avatar-1.jpg" class=" img-responsive ">
                           </div>
+                        </template>
+                        <template v-else>
+                          <div class="col-md-2 col-xs-2 avatar">
+                              <img src="http://www.bitrebels.com/wp-content/uploads/2011/02/Original-Facebook-Geek-Profile-Avatar-1.jpg" class=" img-responsive ">
+                          </div>
+                          <div class="col-md-10 col-xs-10">
+                              <div class="messages msg_receive">
+                                  <p v-text="message.content"></p>
+                                  <time datetime="2009-11-13T20:00" v-text="getSenderName(message) || ''"></time>
+                              </div>
+                          </div>
+                        </template>
                       </div>
                   </div>
                   <div class="panel-footer">
                       <div class="input-group">
-                          <input id="btn-input" type="text" class="form-control input-sm chat_input" placeholder="Write your message here...">
+                          <input id="btn-input" type="text" class="form-control input-sm chat_input" placeholder="Write your message here..." v-model="message">
                           <span class="input-group-btn">
-                          <button class="btn btn-primary btn-sm" id="btn-chat">Send</button>
+                          <button class="btn btn-primary btn-sm" id="btn-chat" @click="sendMessage()">Send</button>
                           </span>
                       </div>
                   </div>
@@ -44,8 +57,11 @@
 </template>
 <script>
 import { db } from '../db'
-import lodash from 'lodash'
 import { authUser } from '../user'
+import lodash from 'lodash'
+import firebase from 'firebase/app'
+
+const rooms = db.collection('rooms')
 
 export default {
   name: 'Room',
@@ -53,17 +69,18 @@ export default {
     return {
       room: null,
       user: null,
-      messages: []
+      message: null,
+      messages: [],
+      roomId: null
     }
   },
-  mounted () {
-    console.log(2325544452)
-    const roomId = this.$route.params.room
+  created () {
+    this.roomId = this.$route.params.room
     if (authUser) {
       this.user = authUser
     }
-
-    db.collection('rooms').doc(roomId).get().then(snapshot => {
+    // Get room info
+    db.collection('rooms').doc(this.roomId).get().then(snapshot => {
       this.room = snapshot.data()
       this.room.id = snapshot.id
     })
@@ -72,28 +89,31 @@ export default {
     room: {
       immediate: true,
       handler (val) {
-        if (lodash.has(this.room, 'id')) {
-          this.getMessages(this.room.id)
+        if (lodash.has(val, 'id')) {
+          this.$bind('messages', rooms.doc(val.id).collection('messages').orderBy('timestamp', 'desc').limit(100))
         }
       }
     }
   },
   methods: {
-    getMessages (roomId) {
-      console.log(roomId)
-      db.collection('rooms').doc(roomId).collection('messages').get().then(snapshot => {
-        snapshot.forEach(doc => {
-          const message = doc.data()
-          message.id = doc.id
-          // Get Sender
-          doc.data().from.get().then(docMes => {
-            message.sender = docMes.data()
-            message.sender.id = docMes.id
-          })
-
-          this.messages.push(message)
+    isMe (sender) {
+      return sender.name === this.user.name
+    },
+    getSenderName (message) {
+      const timestamp = !lodash.isNil(message.timestamp) ? message.timestamp.toDate() : ''
+      return message.from.name + ' - ' + timestamp
+    },
+    sendMessage () {
+      rooms.doc(this.roomId).collection('messages')
+        .add({
+          content: this.message,
+          from: db.collection('users').doc(this.user.id),
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
         })
-      })
+        .then(() => {
+          this.message = ''
+          console.log('mesage created!')
+        })
     }
   }
 }

@@ -57,7 +57,6 @@ export default {
     if (authUser) {
       this.user = authUser
     }
-    console.log(3434444443)
   },
   methods: {
     sendNickName () {
