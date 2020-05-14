@@ -63,8 +63,7 @@ export default {
       db.collection('users')
         .where('username', '==', this.username)
         .limit(1)
-        .get()
-        .then(snapshot => {
+        .onSnapshot(snapshot => {
           snapshot.forEach((doc) => {
             if (doc.exists) {
               this.user = doc.data()
@@ -74,12 +73,15 @@ export default {
         })
     },
     getRooms (roomIds) {
-      db.collection('rooms').where(firebase.firestore.FieldPath.documentId(), 'in', roomIds).get().then(snapshot => {
+      db.collection('rooms').where(firebase.firestore.FieldPath.documentId(), 'in', roomIds).onSnapshot(snapshot => {
+        const rooms = []
         snapshot.forEach(doc => {
           const room = doc.data()
           room.id = doc.id
-          this.rooms.push(room)
+          rooms.push(room)
         })
+
+        this.rooms = rooms
       })
     }
   }

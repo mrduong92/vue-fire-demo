@@ -80,7 +80,7 @@ export default {
       this.user = authUser
     }
     // Get room info
-    db.collection('rooms').doc(this.roomId).get().then(snapshot => {
+    db.collection('rooms').doc(this.roomId).onSnapshot(snapshot => {
       this.room = snapshot.data()
       this.room.id = snapshot.id
     })
