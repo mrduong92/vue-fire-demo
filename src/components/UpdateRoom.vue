@@ -1,5 +1,6 @@
 <template>
   <div class="">
+    <router-link to="/admin/room" class="nav-link">Back to room management</router-link>
     <h1>{{ msg}}</h1>
     <div>
       <div class="input-group">
