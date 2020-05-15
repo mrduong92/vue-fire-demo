@@ -24,31 +24,33 @@
 <script>
 import { db } from '../db'
 import { authUser } from '../user'
-import lodash from 'lodash'
 import firebase from 'firebase/app'
 
 export default {
   name: 'HelloWorld',
   data () {
     return {
-      msg1: 'Welcome to Chat XXX Room',
+      msg1: 'Welcome to Yahoo Chat',
       msg2: 'Login your username',
       msg3: 'Room List of ',
       rooms: [],
       messages: [],
       username: null,
-      user: null
+      user: null,
+      users: []
     }
   },
+  firestore: {
+    rooms: db.collection('rooms')
+  },
   watch: {
-    user: {
+    users: {
       immediate: true,
       handler (val) {
-        localStorage.setItem('user', JSON.stringify(val))
-
-        if (lodash.has(this.user, 'rooms')) {
-          const roomIds = JSON.parse(JSON.stringify(this.user.rooms))
-          this.getRooms(roomIds)
+        if (val.length) {
+          this.user = val[0]
+          this.rooms = this.user.rooms
+          localStorage.setItem('user', JSON.stringify(this.user))
         }
       }
     }
@@ -60,21 +62,12 @@ export default {
   },
   methods: {
     sendNickName () {
-      db.collection('users')
-        .where('username', '==', this.username)
-        .limit(1)
-        .onSnapshot(snapshot => {
-          snapshot.forEach((doc) => {
-            if (doc.exists) {
-              this.user = doc.data()
-              this.user.id = doc.id
-            }
-          })
-        })
+      this.$bind('users', db.collection('users').where('username', '==', this.username).limit(1))
     },
     getRooms (roomIds) {
       db.collection('rooms').where(firebase.firestore.FieldPath.documentId(), 'in', roomIds).onSnapshot(snapshot => {
         const rooms = []
+
         snapshot.forEach(doc => {
           const room = doc.data()
           room.id = doc.id

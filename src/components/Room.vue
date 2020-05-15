@@ -74,7 +74,7 @@ export default {
       roomId: null
     }
   },
-  created () {
+  mounted () {
     this.roomId = this.$route.params.room
     if (authUser) {
       this.user = authUser
@@ -112,7 +112,6 @@ export default {
         })
         .then(() => {
           this.message = ''
-          console.log('mesage created!')
         })
     }
   }
@@ -121,7 +120,7 @@ export default {
 
 <style scoped>
 .chat-window{
-    width: 50%;
+    width: 80%;
     text-align: center;
 }
 .chat-window > div > .panel{
